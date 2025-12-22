@@ -1,5 +1,9 @@
 # @rueda.dev/gems-sardius
 
+<p align="center">
+  <img src="https://github.com/Rafael-Rueda/sardius/blob/main/Sardius.png" alt="Sardius Logo" width="400"/>
+</p>
+
 Sardius - DDD NestJS Backend Template by Rueda.dev
 
 A production-ready NestJS template following Domain-Driven Design (DDD) principles with clean architecture.
