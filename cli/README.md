@@ -1,7 +1,7 @@
 # @rueda.dev/gems-sardius
 
 <p align="center">
-  <img src="https://github.com/Rafael-Rueda/sardius/blob/main/Sardius.png" alt="Sardius Logo" width="400"/>
+  <img src="https://raw.githubusercontent.com/Rafael-Rueda/sardius/main/Sardius.png" alt="Sardius Logo" width="400"/>
 </p>
 
 Sardius - DDD NestJS Backend Template by Rueda.dev
