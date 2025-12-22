@@ -1,6 +1,6 @@
 {
     "name": "@rueda.dev/gems-sardius",
-    "version": "1.0.0",
+    "version": "1.0.1",
     "description": "Sardius - DDD NestJS Backend Template by Rueda.dev",
     "author": "Rueda.dev",
     "license": "MIT",
@@ -22,13 +22,13 @@
         "typescript",
         "prisma",
         "postgresql",
-        "rueda"
+        "rueda.dev"
     ],
     "repository": {
         "type": "git",
-        "url": "https://github.com/rueda-dev/sardius"
+        "url": "https://github.com/rafael-rueda/sardius"
     },
-    "homepage": "https://rueda.dev",
+    "homepage": "https://gems.rueda.dev",
     "engines": {
         "node": ">=18.0.0"
     }
