@@ -7,7 +7,7 @@ A production-ready NestJS template following Domain-Driven Design (DDD) principl
 ## Quick Start
 
 ```bash
-npx @rueda.dev/gems-sardius my-project
+npx "@rueda.dev/gems-sardius" my-project
 cd my-project
 npm install
 ```

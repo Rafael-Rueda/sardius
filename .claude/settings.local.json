@@ -1,4 +1,12 @@
 {
-    "enabledMcpjsonServers": ["context7"],
-    "enableAllProjectMcpServers": true
+  "permissions": {
+    "allow": [
+      "Bash(cd:*)",
+      "Bash(xargs:*)"
+    ]
+  },
+  "enableAllProjectMcpServers": true,
+  "enabledMcpjsonServers": [
+    "context7"
+  ]
 }
