@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="sardius.png" alt="Sardius Logo" width="400"/>
+  <img src="Sardius.png" alt="Sardius Logo" width="400"/>
 </p>
 
 <h1 align="center">Sardius</h1>
