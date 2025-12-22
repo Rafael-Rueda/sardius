@@ -1,0 +1,35 @@
+{
+    "name": "@rueda.dev/gems-sardius",
+    "version": "1.0.0",
+    "description": "Sardius - DDD NestJS Backend Template by Rueda.dev",
+    "author": "Rueda.dev",
+    "license": "MIT",
+    "bin": {
+        "gems-sardius": "./bin/create.js",
+        "create-sardius": "./bin/create.js"
+    },
+    "files": [
+        "bin",
+        "template"
+    ],
+    "keywords": [
+        "nestjs",
+        "ddd",
+        "domain-driven-design",
+        "template",
+        "scaffold",
+        "backend",
+        "typescript",
+        "prisma",
+        "postgresql",
+        "rueda"
+    ],
+    "repository": {
+        "type": "git",
+        "url": "https://github.com/rueda-dev/sardius"
+    },
+    "homepage": "https://rueda.dev",
+    "engines": {
+        "node": ">=18.0.0"
+    }
+}

@@ -1,0 +1,96 @@
+@baseUrl = http://localhost:3333
+@accessToken = {{authenticate.response.body.accessToken}}
+
+# ===========================
+# AUTH
+# ===========================
+
+# @name authenticate
+POST {{baseUrl}}/auth/login
+Content-Type: application/json
+
+{
+    "username": "jane_doe",
+    "email": "jane.doe@example.com",
+    "password": "securePassword123"
+}
+
+###
+
+# @name authenticate_google
+GET {{baseUrl}}/auth/google
+
+###
+
+# @name authenticate_google_callback
+GET {{baseUrl}}/auth/google/callback?code=your_google_code_here
+
+###
+
+# ===========================
+# USERS
+# ===========================
+
+# @name create_user
+POST {{baseUrl}}/users
+Content-Type: application/json
+
+{
+    "username": "jane_doe",
+    "email": "jane.doe@example.com",
+    "password": "securePassword123"
+}
+
+###
+
+# @name list_users
+GET {{baseUrl}}/users?page=1&limit=10
+Authorization: Bearer {{accessToken}}
+
+###
+
+# @name get_user_by_id
+GET {{baseUrl}}/users/{{create_user.response.body.user.id}}
+Authorization: Bearer {{accessToken}}
+
+###
+
+# @name update_user
+PATCH {{baseUrl}}/users/{{create_user.response.body.user.id}}
+Content-Type: application/json
+Authorization: Bearer {{accessToken}}
+
+{
+    "username": "jane_updated",
+    "email": "jane.updated@example.com"
+}
+
+###
+
+# @name update_user_roles
+PATCH {{baseUrl}}/users/{{create_user.response.body.user.id}}
+Content-Type: application/json
+Authorization: Bearer {{accessToken}}
+
+{
+    "roles": ["USER", "ADMIN"]
+}
+
+###
+
+# @name update_user_password
+PATCH {{baseUrl}}/users/{{create_user.response.body.user.id}}
+Content-Type: application/json
+Authorization: Bearer {{accessToken}}
+
+{
+    "password": "newSecurePassword456"
+}
+
+###
+
+# @name delete_user
+DELETE {{baseUrl}}/users/{{create_user.response.body.user.id}}
+Authorization: Bearer {{accessToken}}
+
+###
