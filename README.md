@@ -429,8 +429,8 @@ Sardius is perfect for:
 
 ## Support & Community
 
-- [Report Issues](https://github.com/rueda-dev/sardius/issues)
-- [Discussions](https://github.com/rueda-dev/sardius/discussions)
+- [Report Issues](https://github.com/rafael-rueda/sardius/issues)
+- [Discussions](https://github.com/rafael-rueda/sardius/discussions)
 
 ---
 
