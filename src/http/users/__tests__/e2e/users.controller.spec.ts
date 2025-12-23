@@ -6,8 +6,8 @@ import request from "supertest";
 
 describe("UsersController (e2e)", () => {
     let app: INestApplication;
-    let authToken: string | undefined;
-    let createdUserId: string | undefined;
+    let authToken: string;
+    let createdUserId: string;
 
     beforeAll(async () => {
         const moduleFixture: TestingModule = await Test.createTestingModule({
