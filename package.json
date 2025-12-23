@@ -21,7 +21,8 @@
         "test:e2e": "dotenv -e .env.test -- jest --config ./test/e2e/jest.config.json",
         "prisma:generate": "prisma generate",
         "prisma:migrate": "prisma migrate dev",
-        "prisma:studio": "prisma studio"
+        "prisma:studio": "prisma studio",
+        "sync:template": "node scripts/sync-template.js"
     },
     "dependencies": {
         "@nestjs/common": "^11.0.1",
