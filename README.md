@@ -73,7 +73,7 @@ npm install
 ### Manual Installation
 
 ```bash
-git clone https://github.com/rueda-dev/sardius.git my-project
+git clone https://github.com/rafael-rueda/sardius.git my-project
 cd my-project
 npm install
 cp .env.example .env
