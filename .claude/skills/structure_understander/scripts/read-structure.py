@@ -434,22 +434,25 @@ def find_test_files(base_path):
     for root, dirs, files in os.walk(src_path):
         dirs[:] = [d for d in dirs if d not in IGNORE_SET]
         for f in files:
-            if f.endswith('.spec.ts') and not f.endswith('.e2e-spec.ts'):
+            if f.endswith('.spec.ts'):
                 rel_path = os.path.relpath(os.path.join(root, f), base_path)
-                base_name = f.replace('.spec.ts', '').replace('.use-case', '').replace('.controller', '').replace('.service', '')
-                tests['unit'].append({
-                    'name': f,
-                    'path': rel_path,
-                    'base_name': base_name
-                })
-            elif f.endswith('.e2e-spec.ts'):
-                rel_path = os.path.relpath(os.path.join(root, f), base_path)
-                base_name = f.replace('.e2e-spec.ts', '')
-                tests['e2e'].append({
-                    'name': f,
-                    'path': rel_path,
-                    'base_name': base_name
-                })
+                # Check if it's an e2e test (in e2e directory or has .e2e-spec.ts extension)
+                is_e2e = f.endswith('.e2e-spec.ts') or '/e2e/' in rel_path.replace('\\', '/') or '\\e2e\\' in rel_path
+
+                if is_e2e:
+                    base_name = f.replace('.e2e-spec.ts', '').replace('.spec.ts', '').replace('.controller', '')
+                    tests['e2e'].append({
+                        'name': f,
+                        'path': rel_path,
+                        'base_name': base_name
+                    })
+                else:
+                    base_name = f.replace('.spec.ts', '').replace('.use-case', '').replace('.controller', '').replace('.service', '')
+                    tests['unit'].append({
+                        'name': f,
+                        'path': rel_path,
+                        'base_name': base_name
+                    })
 
     return tests
 
