@@ -35,3 +35,35 @@ model User {
 
   @@map("users")
 }
+
+// ===========================================
+// STORAGE BOUNDED CONTEXT
+// ===========================================
+
+model File {
+  // Identifier
+  id String @id @default(uuid())
+
+  // Polymorphic relationship (can belong to any entity)
+  entityType String @map("entity_type") // "user", "product", etc.
+  entityId   String @map("entity_id")
+  field      String // "avatar", "gallery", "document", etc.
+
+  // File information
+  filename String
+  path     String @unique // Full path in bucket
+  mimeType String @map("mime_type")
+  size     Int // Size in bytes
+
+  // Image dimensions (nullable for non-image files)
+  width  Int?
+  height Int?
+
+  // Timestamps
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@index([entityType, entityId])
+  @@index([entityType, entityId, field])
+  @@map("files")
+}

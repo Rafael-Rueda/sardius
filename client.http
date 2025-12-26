@@ -94,3 +94,96 @@ DELETE {{baseUrl}}/users/{{create_user.response.body.user.id}}
 Authorization: Bearer {{accessToken}}
 
 ###
+
+# @name update_user_avatar
+# Upload avatar image for user (multipart/form-data)
+PATCH {{baseUrl}}/users/{{create_user.response.body.user.id}}
+Authorization: Bearer {{accessToken}}
+Content-Type: multipart/form-data; boundary=----WebKitFormBoundary
+
+------WebKitFormBoundary
+Content-Disposition: form-data; name="avatar"; filename="avatar.png"
+Content-Type: image/png
+
+< ./Sardius.png
+------WebKitFormBoundary--
+
+###
+
+# @name update_user_avatar_with_data
+# Upload avatar and update username at the same time
+PATCH {{baseUrl}}/users/{{create_user.response.body.user.id}}
+Authorization: Bearer {{accessToken}}
+Content-Type: multipart/form-data; boundary=----WebKitFormBoundary
+
+------WebKitFormBoundary
+Content-Disposition: form-data; name="username"
+
+jane_with_avatar
+------WebKitFormBoundary
+Content-Disposition: form-data; name="avatar"; filename="avatar.jpg"
+Content-Type: image/jpeg
+
+< ./Sardius.png
+------WebKitFormBoundary--
+
+###
+
+# @name delete_user_avatar
+# Delete avatar by sending deleteAvatar=true
+PATCH {{baseUrl}}/users/{{create_user.response.body.user.id}}
+Authorization: Bearer {{accessToken}}
+Content-Type: multipart/form-data; boundary=----WebKitFormBoundary
+
+------WebKitFormBoundary
+Content-Disposition: form-data; name="deleteAvatar"
+
+true
+------WebKitFormBoundary--
+
+###
+
+# ===========================
+# STORAGE
+# ===========================
+
+# @name upload_file
+# Upload a generic file to storage
+POST {{baseUrl}}/storage/upload
+Authorization: Bearer {{accessToken}}
+Content-Type: multipart/form-data; boundary=----WebKitFormBoundary
+
+------WebKitFormBoundary
+Content-Disposition: form-data; name="entityType"
+
+user
+------WebKitFormBoundary
+Content-Disposition: form-data; name="entityId"
+
+{{create_user.response.body.user.id}}
+------WebKitFormBoundary
+Content-Disposition: form-data; name="field"
+
+document
+------WebKitFormBoundary
+Content-Disposition: form-data; name="file"; filename="document.pdf"
+Content-Type: application/pdf
+
+< ./Sardius.png
+------WebKitFormBoundary--
+
+###
+
+# @name get_file_url
+# Get signed URL for a file
+GET {{baseUrl}}/storage/url?entityType=user&entityId={{create_user.response.body.user.id}}&field=avatar
+Authorization: Bearer {{accessToken}}
+
+###
+
+# @name delete_file
+# Delete a file from storage
+DELETE {{baseUrl}}/storage/file/{{upload_file.response.body.id}}
+Authorization: Bearer {{accessToken}}
+
+###

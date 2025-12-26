@@ -161,6 +161,35 @@ const unique = Username.generateUniqueFrom("john_doe");
 // Result: "john_doe_a7x9k2"
 ```
 
+### Cloud Storage with Auto-Optimization
+
+**GCP Cloud Storage** integration with automatic image optimization. Upload once, get optimized images automatically.
+
+```typescript
+// Upload avatar - automatically resized to 400x400, converted to WebP
+await uploadFileUseCase.execute({
+    entityType: "user",
+    entityId: userId,
+    field: "avatar",
+    buffer: file.buffer,
+    optimizeImage: {
+        width: 400,
+        height: 400,
+        fit: "cover",
+        quality: 80,
+        format: "webp",
+    },
+});
+```
+
+**Key Features:**
+
+- **Magic bytes validation** - Detect real file type, not just extension
+- **Auto image optimization** - Resize, compress, convert with Sharp
+- **Polymorphic relationships** - Files can belong to any entity
+- **Signed URLs** - Secure, time-limited access to files
+- **Stream uploads** - Handle large files efficiently
+
 ### Testing-First Architecture
 
 Unit tests run in milliseconds because they don't need the framework. E2E tests validate your HTTP contracts.
@@ -185,11 +214,11 @@ npm run test:cov    # Coverage report
 Sardius enforces strict layer separation through clear dependency rules:
 
 ```
-┌─────────────────────────────────────────────────────────────────┐
+┌──────────────────────────────────────────────────────────────────┐
 │                         HTTP Layer                               │
-│  ┌─────────────┐  ┌─────────────┐  ┌─────────────────────────┐  │
-│  │ Controllers │──│  Services   │──│ Guards & Decorators     │  │
-│  └─────────────┘  └─────────────┘  └─────────────────────────┘  │
+│  ┌─────────────┐  ┌─────────────┐  ┌─────────────────────────┐   │
+│  │ Controllers │──│  Services   │──│ Guards & Decorators     │   │
+│  └─────────────┘  └─────────────┘  └─────────────────────────┘   │
 │         │               │                     │                  │
 │         └───────────────┴─────────────────────┘                  │
 │                         │                                        │
@@ -197,21 +226,21 @@ Sardius enforces strict layer separation through clear dependency rules:
                           │ imports
 ┌─────────────────────────▼────────────────────────────────────────┐
 │                       Domain Layer                               │
-│  ┌─────────────┐  ┌─────────────┐  ┌─────────────────────────┐  │
-│  │  Use Cases  │──│  Entities   │──│    Value Objects        │  │
-│  └─────────────┘  └─────────────┘  └─────────────────────────┘  │
+│  ┌─────────────┐  ┌─────────────┐  ┌─────────────────────────┐   │
+│  │  Use Cases  │──│  Entities   │──│    Value Objects        │   │
+│  └─────────────┘  └─────────────┘  └─────────────────────────┘   │
 │  ┌─────────────┐  ┌─────────────┐                                │
-│  │ Repository  │  │  Provider   │  ← Abstract interfaces        │
+│  │ Repository  │  │  Provider   │  ← Abstract interfaces         │
 │  │ Interfaces  │  │ Interfaces  │                                │
 │  └─────────────┘  └─────────────┘                                │
 └──────────────────────────────────────────────────────────────────┘
                           ▲ implements
 ┌─────────────────────────┴────────────────────────────────────────┐
 │                    Infrastructure Layer                          │
-│  ┌─────────────┐  ┌─────────────┐  ┌─────────────────────────┐  │
-│  │   Prisma    │──│  Bcrypt     │──│    Google OAuth         │  │
-│  │ Repository  │  │  Provider   │  │      Provider           │  │
-│  └─────────────┘  └─────────────┘  └─────────────────────────┘  │
+│  ┌─────────────┐  ┌─────────────┐  ┌─────────────────────────┐   │
+│  │   Prisma    │──│  Bcrypt     │──│    Google OAuth         │   │
+│  │ Repository  │  │  Provider   │  │      Provider           │   │
+│  └─────────────┘  └─────────────┘  └─────────────────────────┘   │
 └──────────────────────────────────────────────────────────────────┘
 ```
 
@@ -232,20 +261,26 @@ sardius/
 ├── src/
 │   ├── domain/                    # Pure business logic
 │   │   ├── @shared/               # Primitives (Either, Entity, ValueObject)
-│   │   └── identity/              # User management bounded context
-│   │       ├── application/       # Use cases & repository interfaces
-│   │       ├── enterprise/        # Entities & value objects
-│   │       └── errors/            # Domain-specific errors
+│   │   ├── identity/              # User management bounded context
+│   │   │   ├── application/       # Use cases & repository interfaces
+│   │   │   ├── enterprise/        # Entities & value objects
+│   │   │   └── errors/            # Domain-specific errors
+│   │   └── storage/               # File storage bounded context
+│   │       ├── application/       # Upload, delete, URL use cases
+│   │       ├── enterprise/        # File entity & value objects
+│   │       └── errors/            # Storage-specific errors
 │   │
 │   ├── http/                      # NestJS HTTP adapter
 │   │   ├── @shared/               # Decorators, pipes, presenters
 │   │   ├── auth/                  # Authentication endpoints
-│   │   └── users/                 # User management endpoints
+│   │   ├── users/                 # User management endpoints
+│   │   └── storage/               # File upload endpoints
 │   │
 │   ├── infra/                     # External implementations
 │   │   ├── auth/                  # OAuth & password providers
 │   │   ├── cryptography/          # Bcrypt implementation
-│   │   └── database/              # Prisma setup & repositories
+│   │   ├── database/              # Prisma setup & repositories
+│   │   └── storage/               # GCP Storage, Sharp, validators
 │   │
 │   └── env/                       # Environment validation
 │
@@ -258,7 +293,9 @@ sardius/
 
 ## Available Use Cases
 
-Sardius comes with a complete **Identity** bounded context:
+Sardius comes with complete **Identity** and **Storage** bounded contexts:
+
+### Identity
 
 | Use Case              | Description                                        |
 | --------------------- | -------------------------------------------------- |
@@ -266,8 +303,16 @@ Sardius comes with a complete **Identity** bounded context:
 | `AuthenticateUseCase` | Multi-method auth (password + Google OAuth)        |
 | `GetUserByIdUseCase`  | Fetch user by ID                                   |
 | `GetAllUsersUseCase`  | Paginated user listing                             |
-| `UpdateUserUseCase`   | Update user profiles                               |
+| `UpdateUserUseCase`   | Update user profiles with avatar support           |
 | `DeleteUserUseCase`   | Remove users                                       |
+
+### Storage
+
+| Use Case            | Description                                        |
+| ------------------- | -------------------------------------------------- |
+| `UploadFileUseCase` | Upload files with auto-optimization and validation |
+| `DeleteFileUseCase` | Remove files from storage and database             |
+| `GetFileUrlUseCase` | Generate public or signed URLs for files           |
 
 ---
 
@@ -283,12 +328,22 @@ Sardius comes with a complete **Identity** bounded context:
 
 ### Users
 
-| Method   | Endpoint     | Description    | Auth     |
-| -------- | ------------ | -------------- | -------- |
-| `GET`    | `/users`     | List all users | Required |
-| `GET`    | `/users/:id` | Get user by ID | Required |
-| `PUT`    | `/users/:id` | Update user    | Required |
-| `DELETE` | `/users/:id` | Delete user    | Admin    |
+| Method   | Endpoint     | Description                      | Auth     |
+| -------- | ------------ | -------------------------------- | -------- |
+| `POST`   | `/users`     | Create new user                  | Public   |
+| `GET`    | `/users`     | List all users                   | Required |
+| `GET`    | `/users/:id` | Get user by ID                   | Required |
+| `PATCH`  | `/users/:id` | Update user (with avatar upload) | Required |
+| `DELETE` | `/users/:id` | Delete user                      | Required |
+
+### Storage
+
+| Method   | Endpoint                           | Description            | Auth     |
+| -------- | ---------------------------------- | ---------------------- | -------- |
+| `POST`   | `/storage/upload`                  | Upload file            | Required |
+| `GET`    | `/storage/file/:fileId`            | Get file URL by ID     | Required |
+| `GET`    | `/storage/entity/:type/:id/:field` | Get file URL by entity | Required |
+| `DELETE` | `/storage/file/:fileId`            | Delete file            | Required |
 
 ---
 
@@ -299,6 +354,7 @@ Sardius comes with a complete **Identity** bounded context:
 ```env
 # Server
 PORT=3333
+NODE_ENV=development
 
 # Database
 DATABASE_URL=postgresql://user:password@localhost:5432/sardius
@@ -311,6 +367,10 @@ JWT_PUBLIC_KEY=<base64-encoded-public-key>
 GOOGLE_OAUTH2_CLIENT_ID=<your-client-id>
 GOOGLE_OAUTH2_CLIENT_SECRET=<your-client-secret>
 GOOGLE_OAUTH2_REDIRECT_URL=http://localhost:3333/auth/google/callback
+
+# GCP Cloud Storage
+GCP_BUCKET_NAME=<your-bucket-name>
+GCP_KEY_FILE_PATH=<path-to-service-account-json>
 ```
 
 ### Generate RS256 Keys
@@ -359,17 +419,20 @@ npm run format           # Prettier formatting
 
 ## Tech Stack
 
-| Technology         | Purpose                       |
-| ------------------ | ----------------------------- |
-| **Node.js 18+**    | Runtime environment           |
-| **TypeScript 5.7** | Type-safe development         |
-| **NestJS 11**      | HTTP framework (adapter only) |
-| **Prisma 7**       | Type-safe ORM                 |
-| **PostgreSQL**     | Database                      |
-| **Zod**            | Runtime validation            |
-| **Jest**           | Testing framework             |
-| **bcrypt**         | Password hashing              |
-| **googleapis**     | Google OAuth 2.0              |
+| Technology             | Purpose                       |
+| ---------------------- | ----------------------------- |
+| **Node.js 18+**        | Runtime environment           |
+| **TypeScript 5.7**     | Type-safe development         |
+| **NestJS 11**          | HTTP framework (adapter only) |
+| **Prisma 7**           | Type-safe ORM                 |
+| **PostgreSQL**         | Database                      |
+| **Zod**                | Runtime validation            |
+| **Jest**               | Testing framework             |
+| **bcrypt**             | Password hashing              |
+| **googleapis**         | Google OAuth 2.0              |
+| **@google-cloud/storage** | Cloud file storage         |
+| **Sharp**              | Image processing & optimization |
+| **file-type**          | Magic bytes file detection    |
 
 ---
 

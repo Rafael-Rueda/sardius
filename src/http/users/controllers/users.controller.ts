@@ -1,7 +1,10 @@
 import { Validator } from "@/http/@shared/decorators/validator.decorator";
 import { Public } from "@/http/auth/decorators/public.decorator";
-import { Body, Controller, Delete, Get, Param, Patch, Post, Query } from "@nestjs/common";
-import { ApiBearerAuth, ApiBody, ApiOperation, ApiParam, ApiQuery, ApiResponse, ApiTags } from "@nestjs/swagger";
+import type { Env } from "@/env/env";
+import { Body, Controller, Delete, Get, Param, Patch, Post, Query, UploadedFile, UseInterceptors } from "@nestjs/common";
+import { ConfigService } from "@nestjs/config";
+import { FileInterceptor } from "@nestjs/platform-express";
+import { ApiBearerAuth, ApiBody, ApiConsumes, ApiOperation, ApiParam, ApiQuery, ApiResponse, ApiTags } from "@nestjs/swagger";
 import {
     CreateUserDTO,
     createUserBodySchema,
@@ -17,7 +20,10 @@ import { UsersService } from "../services/users.service";
 @ApiBearerAuth("JWT-auth")
 @Controller("/users")
 export class UsersController {
-    constructor(private readonly usersService: UsersService) {}
+    constructor(
+        private readonly usersService: UsersService,
+        private readonly configService: ConfigService<Env, true>,
+    ) {}
 
     @Public()
     @Post()
@@ -53,17 +59,46 @@ export class UsersController {
     }
 
     @Patch(":id")
+    @UseInterceptors(FileInterceptor("avatar"))
     @Validator(updateUserBodySchema)
-    @ApiOperation({ summary: "Update user", description: "Update user information" })
+    @ApiOperation({
+        summary: "Update user",
+        description: "Update user information. Upload avatar file or send deleteAvatar=true to remove it.",
+    })
+    @ApiConsumes("multipart/form-data")
     @ApiParam({ name: "id", type: String, description: "User UUID" })
-    @ApiBody({ type: UpdateUserDTO })
+    @ApiBody({
+        description: "User update data with optional avatar",
+        schema: {
+            type: "object",
+            properties: {
+                username: { type: "string", description: "Username (3-24 characters)" },
+                email: { type: "string", format: "email", description: "User email address" },
+                password: { type: "string", description: "Password (minimum 8 characters)" },
+                roles: { type: "array", items: { type: "string", enum: ["USER", "ADMIN"] } },
+                avatar: { type: "string", format: "binary", description: "Avatar image (max 5MB)" },
+                deleteAvatar: { type: "string", enum: ["true", "false"], description: "Set to 'true' to delete avatar" },
+            },
+        },
+    })
     @ApiResponse({ status: 200, description: "User updated successfully", type: UserResponseDTO })
     @ApiResponse({ status: 400, description: "Validation error" })
     @ApiResponse({ status: 401, description: "Unauthorized" })
     @ApiResponse({ status: 404, description: "User not found" })
     @ApiResponse({ status: 409, description: "Email/username already taken" })
-    update(@Param("id") id: string, @Body() body: UpdateUserDTO) {
-        return this.usersService.update(id, body);
+    update(
+        @Param("id") id: string,
+        @Body() body: UpdateUserDTO,
+        @UploadedFile() avatar?: Express.Multer.File,
+    ) {
+        const environment = this.configService.get("NODE_ENV", { infer: true }) ?? "development";
+        const deleteAvatar = body.deleteAvatar === "true";
+
+        return this.usersService.update(id, body, {
+            avatar,
+            deleteAvatar,
+            environment,
+        });
     }
 
     @Delete(":id")

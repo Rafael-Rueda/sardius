@@ -34,6 +34,10 @@ export const updateUserBodySchema = z.object({
         .array(z.enum(["USER", "ADMIN"]))
         .optional()
         .describe("User roles"),
+    deleteAvatar: z
+        .enum(["true", "false"])
+        .optional()
+        .describe("Set to 'true' to delete avatar"),
 });
 
 export class UpdateUserDTO extends createZodDto(updateUserBodySchema) {}
@@ -44,6 +48,7 @@ export const userResponseSchema = z.object({
     username: z.string().describe("Username"),
     email: z.email().describe("User email address"),
     roles: z.array(z.enum(["USER", "ADMIN"])).describe("User roles"),
+    avatarUrl: z.string().nullable().describe("User avatar URL"),
 });
 
 export class UserResponseDTO extends createZodDto(userResponseSchema) {}

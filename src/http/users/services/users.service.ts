@@ -3,20 +3,14 @@ import { DeleteUserUseCase } from "@/domain/identity/application/use-cases/delet
 import { GetAllUsersUseCase } from "@/domain/identity/application/use-cases/get-all-users.use-case";
 import { GetUserByIdUseCase } from "@/domain/identity/application/use-cases/get-user-by-id.use-case";
 import { UpdateUserUseCase } from "@/domain/identity/application/use-cases/update-user.use-case";
-import { ROLES, Roles } from "@/domain/identity/enterprise/entities/user.entity";
+import { ROLES, Roles, User } from "@/domain/identity/enterprise/entities/user.entity";
+import type { FilesRepository } from "@/domain/storage/application/repositories/files.repository";
+import { DeleteFileUseCase } from "@/domain/storage/application/use-cases/delete-file.use-case";
+import { GetFileUrlUseCase } from "@/domain/storage/application/use-cases/get-file-url.use-case";
+import { UploadFileUseCase } from "@/domain/storage/application/use-cases/upload-file.use-case";
 import { UserPresenter } from "@/http/@shared/presenters/user.presenter";
-import {
-    CreateUserDTO,
-    ListUsersQueryDTO,
-    UpdateUserDTO,
-} from "@/http/users/schemas/users.schema";
-import {
-    BadRequestException,
-    ConflictException,
-    Inject,
-    Injectable,
-    NotFoundException,
-} from "@nestjs/common";
+import { CreateUserDTO, ListUsersQueryDTO, UpdateUserDTO } from "@/http/users/schemas/users.schema";
+import { BadRequestException, ConflictException, Inject, Injectable, NotFoundException } from "@nestjs/common";
 
 @Injectable()
 export class UsersService {
@@ -31,7 +25,38 @@ export class UsersService {
         private updateUserUseCase: UpdateUserUseCase,
         @Inject("DeleteUserUseCase")
         private deleteUserUseCase: DeleteUserUseCase,
+        @Inject("GetFileUrlUseCase")
+        private getFileUrlUseCase: GetFileUrlUseCase,
+        @Inject("UploadFileUseCase")
+        private uploadFileUseCase: UploadFileUseCase,
+        @Inject("DeleteFileUseCase")
+        private deleteFileUseCase: DeleteFileUseCase,
+        @Inject("FilesRepository")
+        private filesRepository: FilesRepository,
     ) {}
+
+    private async getUserAvatarUrl(userId: string): Promise<string | null> {
+        const result = await this.getFileUrlUseCase.execute({
+            entityType: "user",
+            entityId: userId,
+            field: "avatar",
+        });
+
+        if (result.isLeft()) {
+            return null;
+        }
+
+        return result.value.url;
+    }
+
+    private async presentUser(user: User) {
+        const avatarUrl = await this.getUserAvatarUrl(user.id.toString());
+        return UserPresenter.toHTTP(user, { avatarUrl });
+    }
+
+    private async presentUsers(users: User[]) {
+        return Promise.all(users.map((user) => this.presentUser(user)));
+    }
 
     async create(dto: CreateUserDTO) {
         const result = await this.createUserUseCase.execute({
@@ -50,7 +75,7 @@ export class UsersService {
         }
 
         return {
-            user: UserPresenter.toHTTP(result.value.user),
+            user: await this.presentUser(result.value.user),
         };
     }
 
@@ -63,7 +88,7 @@ export class UsersService {
         const users = result.value.users;
 
         return {
-            users: users.map(UserPresenter.toHTTP),
+            users: await this.presentUsers(users),
             page: query.page,
             limit: query.limit,
         };
@@ -81,11 +106,19 @@ export class UsersService {
         }
 
         return {
-            user: UserPresenter.toHTTP(result.value.user),
+            user: await this.presentUser(result.value.user),
         };
     }
 
-    async update(userId: string, dto: UpdateUserDTO) {
+    async update(
+        userId: string,
+        dto: UpdateUserDTO,
+        options?: {
+            avatar?: Express.Multer.File;
+            deleteAvatar?: boolean;
+            environment?: string;
+        },
+    ) {
         const result = await this.updateUserUseCase.execute({
             userId,
             username: dto.username,
@@ -105,8 +138,44 @@ export class UsersService {
             throw new BadRequestException(error.message);
         }
 
+        // Delete avatar if explicitly requested
+        if (options?.deleteAvatar) {
+            const existingFile = await this.filesRepository.findByEntityAndField("user", userId, "avatar");
+            if (existingFile) {
+                await this.deleteFileUseCase.execute({
+                    fileId: existingFile.id.toString(),
+                });
+            }
+        }
+        // Upload avatar if provided
+        else if (options?.avatar && options?.environment) {
+            const uploadResult = await this.uploadFileUseCase.execute({
+                entityType: "user",
+                entityId: userId,
+                field: "avatar",
+                filename: options.avatar.originalname,
+                buffer: options.avatar.buffer,
+                environment: options.environment,
+                validationOptions: {
+                    allowedMimeTypes: ["image/jpeg", "image/png", "image/webp", "image/gif"],
+                    maxSizeBytes: 5 * 1024 * 1024, // 5MB
+                },
+                optimizeImage: {
+                    width: 400,
+                    height: 400,
+                    fit: "cover",
+                    quality: 80,
+                    format: "webp",
+                },
+            });
+
+            if (uploadResult.isLeft()) {
+                throw new BadRequestException(uploadResult.value.message);
+            }
+        }
+
         return {
-            user: UserPresenter.toHTTP(result.value.user),
+            user: await this.presentUser(result.value.user),
         };
     }
 
@@ -122,7 +191,7 @@ export class UsersService {
         }
 
         return {
-            user: UserPresenter.toHTTP(result.value.user),
+            user: await this.presentUser(result.value.user),
         };
     }
 }

@@ -5,6 +5,7 @@ import { fromZodError } from "zod-validation-error";
 dotenv.config();
 
 export const envSchema = z.object({
+    NODE_ENV: z.enum(["development", "production", "test"]).default("development"),
     PORT: z.coerce.number().int().positive().default(3333),
     DATABASE_URL: z.string(),
 
@@ -14,6 +15,10 @@ export const envSchema = z.object({
     GOOGLE_OAUTH2_CLIENT_ID: z.string(),
     GOOGLE_OAUTH2_CLIENT_SECRET: z.string(),
     GOOGLE_OAUTH2_REDIRECT_URL: z.string(),
+
+    // GCP Storage
+    GCP_BUCKET_NAME: z.string().optional(),
+    GCP_KEY_FILE_PATH: z.string().optional(),
 });
 
 export type Env = z.infer<typeof envSchema>;
