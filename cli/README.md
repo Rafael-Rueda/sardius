@@ -4,9 +4,19 @@
   <img src="https://raw.githubusercontent.com/Rafael-Rueda/sardius/main/Sardius.png" alt="Sardius Logo" width="400"/>
 </p>
 
-Sardius - DDD NestJS Backend Template by Rueda.dev
+<h3 align="center">A Backend Template That Won't Lock You Into a Framework</h3>
 
-A production-ready NestJS template following Domain-Driven Design (DDD) principles with clean architecture.
+<p align="center">
+  Build scalable Node.js backends with pure business logic that lives independently from NestJS
+</p>
+
+---
+
+## What is Sardius?
+
+Sardius is a **production-ready backend template** that puts your business logic first. Unlike typical NestJS projects where everything depends on the framework, Sardius keeps your core domain **100% pure TypeScript** with zero external dependencies.
+
+**The result?** Your business logic can be tested in milliseconds, migrated to any framework, and maintained without framework expertise.
 
 ## Quick Start
 
@@ -14,80 +24,88 @@ A production-ready NestJS template following Domain-Driven Design (DDD) principl
 npx "@rueda.dev/gems-sardius" my-project
 cd my-project
 npm install
-```
-
-## Features
-
-- **Domain-Driven Design** - Clean separation between Domain, HTTP, and Infrastructure layers
-- **NestJS** - Only used as HTTP layer, keeping your domain pure
-- **TypeScript** - Full type safety with ES2023
-- **Prisma** - Type-safe ORM with PostgreSQL
-- **Zod** - Runtime validation
-- **JWT Auth** - Built-in authentication with Google OAuth support
-- **RBAC** - Role-based access control
-- **Either Pattern** - Functional error handling without exceptions
-- **Testing** - Jest configured for unit and E2E tests
-
-## Architecture
-
-```
-src/
-├── domain/          # Business logic (pure TypeScript, no frameworks)
-│   ├── @shared/     # Shared primitives (Entity, ValueObject, Either)
-│   └── identity/    # Identity bounded context (User management)
-│
-├── http/            # HTTP layer (NestJS)
-│   ├── @shared/     # Shared HTTP utilities
-│   ├── auth/        # Authentication endpoints
-│   └── users/       # User management endpoints
-│
-└── infra/           # Infrastructure implementations
-    ├── auth/        # Auth providers (Google, Password)
-    ├── cryptography/# Bcrypt implementation
-    └── database/    # Prisma & repositories
-```
-
-## Layer Rules
-
-- **domain/** CANNOT import from **http/** or **infra/**
-- **http/** can import from **domain/** and **infra/**
-- **infra/** implements interfaces defined in **domain/**
-
-## Getting Started
-
-After creating your project:
-
-```bash
-# 1. Install dependencies
-npm install
-
-# 2. Configure environment
 cp .env.example .env
-
-# 3. Start PostgreSQL
 docker-compose up -d
-
-# 4. Run migrations
 npm run prisma:migrate
-
-# 5. Start development server
 npm run start:dev
 ```
 
-## Available Scripts
+Your API is now running at `http://localhost:3333`
+
+## What's Included
+
+| Feature | Description |
+|---------|-------------|
+| **User Management** | Complete CRUD with email/username authentication |
+| **Google OAuth** | Sign in with Google out of the box |
+| **Role-Based Access** | `@Admin()`, `@Public()`, `@Roles()` decorators |
+| **File Storage** | GCP Cloud Storage with auto image optimization |
+| **RS256 JWT** | Asymmetric encryption for secure tokens |
+| **Either Pattern** | Type-safe error handling without try-catch |
+
+## Why Sardius?
+
+### Traditional Approach
+```typescript
+// Business logic mixed with framework code
+@Injectable()
+export class UserService {
+  constructor(private prisma: PrismaService) {}
+
+  async createUser(dto: CreateUserDto) {
+    // What if you need to change ORMs?
+    // What if NestJS changes its patterns?
+  }
+}
+```
+
+### Sardius Approach
+```typescript
+// Pure TypeScript - no framework, no dependencies
+export class CreateUserUseCase {
+  constructor(private usersRepository: UsersRepository) {}
+
+  async execute(request: CreateUserRequest): Promise<Either<Error, User>> {
+    // Your business logic stays the same forever
+    // NestJS is just the HTTP adapter
+  }
+}
+```
+
+## Project Structure
+
+```
+src/
+├── domain/           # Pure business logic (no imports from http/ or infra/)
+│   ├── @shared/      # Entity, ValueObject, Either pattern
+│   ├── identity/     # User management bounded context
+│   └── storage/      # File storage bounded context
+│
+├── http/             # NestJS (just an HTTP adapter)
+│   ├── auth/         # POST /auth/login, GET /auth/google
+│   ├── users/        # CRUD endpoints
+│   └── storage/      # File upload/download
+│
+└── infra/            # External implementations
+    ├── database/     # Prisma repositories
+    ├── cryptography/ # Bcrypt, JWT
+    └── storage/      # GCP Storage, Sharp
+```
+
+## Available Commands
 
 ```bash
-npm run start:dev      # Development with hot reload
+npm run start:dev      # Development server with hot reload
 npm run build          # Build for production
-npm run test:unit      # Run unit tests
-npm run test:e2e       # Run E2E tests
-npm run prisma:studio  # Open Prisma Studio
+npm run test:unit      # Fast unit tests (domain only)
+npm run test:e2e       # Integration tests
+npm run prisma:studio  # Visual database editor
 ```
+
+## Learn More
+
+See the full documentation at the [Sardius GitHub repository](https://github.com/rafael-rueda/sardius).
 
 ## License
 
-MIT
-
-## Author
-
-[Rueda.dev](https://rueda.dev)
+MIT - [Rueda.dev](https://rueda.dev)
