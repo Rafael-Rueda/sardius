@@ -172,7 +172,20 @@ export class StorageController {
     @ApiResponse({ status: 401, description: "Unauthorized" })
     @ApiResponse({ status: 404, description: "File not found" })
     async deleteFile(@Param("fileId") fileId: string) {
-        await this.storageService.delete(fileId);
-        return { success: true };
+        const result = await this.storageService.delete(fileId);
+        return {
+            file: {
+                id: result.file.id.toString(),
+                entityType: result.file.entityType,
+                entityId: result.file.entityId,
+                field: result.file.field,
+                filename: result.file.filename,
+                path: result.file.path.toString(),
+                mimeType: result.file.mimeType,
+                size: result.file.size,
+                width: result.file.width ?? null,
+                height: result.file.height ?? null,
+            },
+        };
     }
 }

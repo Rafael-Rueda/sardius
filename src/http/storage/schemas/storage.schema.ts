@@ -75,7 +75,20 @@ export const fileUrlResponseSchema = z.object({
 export class FileUrlResponseDTO extends createZodDto(fileUrlResponseSchema) {}
 
 export const deleteResponseSchema = z.object({
-    success: z.boolean().describe("Operation success status"),
+    file: z
+        .object({
+            id: z.uuid().describe("File unique identifier"),
+            entityType: z.string().describe("Entity type"),
+            entityId: z.uuid().describe("Entity unique identifier"),
+            field: z.string().describe("Field name"),
+            filename: z.string().describe("Original filename"),
+            path: z.string().describe("Storage path"),
+            mimeType: z.string().describe("File MIME type"),
+            size: z.number().describe("File size in bytes"),
+            width: z.number().nullable().describe("Image width in pixels"),
+            height: z.number().nullable().describe("Image height in pixels"),
+        })
+        .describe("Deleted file details"),
 });
 
 export class DeleteResponseDTO extends createZodDto(deleteResponseSchema) {}

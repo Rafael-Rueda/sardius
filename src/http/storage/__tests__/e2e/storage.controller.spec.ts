@@ -30,18 +30,23 @@ describe("StorageController (e2e)", () => {
             password: "password123",
         });
 
-        if (createUserResponse.status === 201) {
-            testUserId = createUserResponse.body.user.id;
+        if (createUserResponse.status !== 201) {
+            console.error("User creation failed:", createUserResponse.status, createUserResponse.body);
+            return;
+        }
 
-            // Login to get auth token
-            const loginResponse = await request(app.getHttpServer()).post("/auth/login").send({
-                email: uniqueEmail,
-                password: "password123",
-            });
+        testUserId = createUserResponse.body.user.id;
 
-            if (loginResponse.status === 200) {
-                authToken = loginResponse.body.accessToken;
-            }
+        // Login to get auth token
+        const loginResponse = await request(app.getHttpServer()).post("/auth/login").send({
+            email: uniqueEmail,
+            password: "password123",
+        });
+
+        if (loginResponse.body.accessToken) {
+            authToken = loginResponse.body.accessToken;
+        } else {
+            console.error("Login failed - no accessToken:", loginResponse.status, loginResponse.body);
         }
     });
 

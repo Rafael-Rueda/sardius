@@ -8,7 +8,7 @@ import {
     loginWithPasswordSchema,
 } from "@/http/auth/schemas/auth.schema";
 import { AuthService } from "@/http/auth/services/auth.service";
-import { Body, Controller, Get, Post, Query, Redirect } from "@nestjs/common";
+import { Body, Controller, Get, HttpCode, HttpStatus, Post, Query, Redirect } from "@nestjs/common";
 import { ApiBody, ApiOperation, ApiResponse, ApiTags } from "@nestjs/swagger";
 import { Public } from "../decorators/public.decorator";
 
@@ -19,6 +19,7 @@ export class AuthController {
 
     @Public()
     @Post("/login")
+    @HttpCode(HttpStatus.OK)
     @Validator(loginWithPasswordSchema)
     @ApiOperation({ summary: "Login with password", description: "Authenticate user with email/username and password" })
     @ApiBody({ type: LoginWithPasswordDTO })

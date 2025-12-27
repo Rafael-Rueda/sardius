@@ -83,12 +83,14 @@ describe("AuthController (e2e)", () => {
             expect(response.status).toBe(400);
         });
 
-        it("should accept code parameter", async () => {
+        // Note: This test makes a real HTTP call to Google's servers with invalid credentials.
+        // The gaxios ESM error in console is expected (Jest VM doesn't support dynamic imports).
+        // Test passes because we expect an error response.
+        it("should return error for invalid OAuth code", async () => {
             const response = await request(app.getHttpServer()).get("/auth/google/callback").query({
                 code: "invalid_code",
             });
 
-            // Will return error for invalid code, but validates the request format
             expect([400, 401, 500]).toContain(response.status);
         });
     });
