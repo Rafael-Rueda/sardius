@@ -1,4 +1,5 @@
 import { Either, Left, Right } from "@/domain/@shared/either";
+import { DomainEvents } from "@/domain/@shared/events/domain-events";
 import { User } from "../../enterprise/entities/user.entity";
 import { UserNotFoundError } from "../../errors/user-not-found.error";
 import { UsersRepository } from "../repositories/users.repository";
@@ -17,11 +18,20 @@ export class DeleteUserUseCase {
     async execute(request: DeleteUserRequest): Promise<DeleteUserResponse> {
         const { userId } = request;
 
-        const user = await this.usersRepository.delete(userId);
+        const user = await this.usersRepository.findById(userId);
 
         if (!user) {
             return Left.call(new UserNotFoundError());
         }
+
+        // Mark user for deletion and emit UserDeletedEvent
+        user.delete();
+
+        // Dispatch domain events before delete (cascade file deletion)
+        DomainEvents.dispatchEventsForAggregate(user.id);
+
+        // Delete user from repository
+        await this.usersRepository.delete(userId);
 
         return Right.call({ user });
     }

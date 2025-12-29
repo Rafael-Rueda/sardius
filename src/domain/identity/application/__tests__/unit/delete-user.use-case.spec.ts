@@ -1,3 +1,4 @@
+import { DomainEvents } from "@/domain/@shared/events/domain-events";
 import { ROLES, User } from "../../../enterprise/entities/user.entity";
 import { Username } from "../../../enterprise/value-objects/username.vo";
 import { UserNotFoundError } from "../../../errors/user-not-found.error";
@@ -33,10 +34,14 @@ describe("DeleteUserUseCase", () => {
     beforeEach(() => {
         usersRepository = makeUsersRepository();
         sut = new DeleteUserUseCase(usersRepository);
+        // Clear domain events between tests
+        DomainEvents.clearHandlers();
+        DomainEvents.clearMarkedAggregates();
     });
 
     it("should delete a user successfully", async () => {
         const user = makeUser({ id: "user-to-delete" });
+        usersRepository.findById.mockResolvedValue(user);
         usersRepository.delete.mockResolvedValue(user);
 
         const result = await sut.execute({ userId: "user-to-delete" });
@@ -45,11 +50,12 @@ describe("DeleteUserUseCase", () => {
         if (result.isRight()) {
             expect(result.value.user.id.toString()).toBe(user.id.toString());
         }
+        expect(usersRepository.findById).toHaveBeenCalledWith("user-to-delete");
         expect(usersRepository.delete).toHaveBeenCalledWith("user-to-delete");
     });
 
     it("should return UserNotFoundError when user does not exist", async () => {
-        usersRepository.delete.mockResolvedValue(null);
+        usersRepository.findById.mockResolvedValue(null);
 
         const result = await sut.execute({ userId: "non-existent-id" });
 
@@ -57,13 +63,17 @@ describe("DeleteUserUseCase", () => {
         if (result.isLeft()) {
             expect(result.value).toBeInstanceOf(UserNotFoundError);
         }
+        expect(usersRepository.delete).not.toHaveBeenCalled();
     });
 
     it("should call repository delete with correct userId", async () => {
-        usersRepository.delete.mockResolvedValue(null);
+        const user = makeUser({ id: "specific-user-id" });
+        usersRepository.findById.mockResolvedValue(user);
+        usersRepository.delete.mockResolvedValue(user);
 
         await sut.execute({ userId: "specific-user-id" });
 
+        expect(usersRepository.findById).toHaveBeenCalledWith("specific-user-id");
         expect(usersRepository.delete).toHaveBeenCalledWith("specific-user-id");
         expect(usersRepository.delete).toHaveBeenCalledTimes(1);
     });
@@ -74,6 +84,7 @@ describe("DeleteUserUseCase", () => {
             email: "deleted@example.com",
             id: "deleted-123",
         });
+        usersRepository.findById.mockResolvedValue(user);
         usersRepository.delete.mockResolvedValue(user);
 
         const result = await sut.execute({ userId: "deleted-123" });
@@ -83,5 +94,23 @@ describe("DeleteUserUseCase", () => {
             expect(result.value.user.username).toBe("deleteduser");
             expect(result.value.user.email).toBe("deleted@example.com");
         }
+    });
+
+    it("should dispatch UserDeletedEvent when user is deleted", async () => {
+        const user = makeUser({ id: "event-user-id" });
+        usersRepository.findById.mockResolvedValue(user);
+        usersRepository.delete.mockResolvedValue(user);
+
+        const eventHandler = jest.fn();
+        DomainEvents.register(eventHandler, "UserDeletedEvent");
+
+        await sut.execute({ userId: "event-user-id" });
+
+        expect(eventHandler).toHaveBeenCalledTimes(1);
+        expect(eventHandler).toHaveBeenCalledWith(
+            expect.objectContaining({
+                ocurredAt: expect.any(Date),
+            }),
+        );
     });
 });

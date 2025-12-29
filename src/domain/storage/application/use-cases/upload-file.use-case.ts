@@ -1,5 +1,6 @@
 import { Readable } from "stream";
 import { Either, Left, Right } from "@/domain/@shared/either";
+import { DomainEvents } from "@/domain/@shared/events/domain-events";
 import { File } from "../../enterprise/entities/file.entity";
 import { FilePath } from "../../enterprise/value-objects/file-path.vo";
 import { FileMetadata } from "../../enterprise/value-objects/file-metadata.vo";
@@ -147,6 +148,9 @@ export class UploadFileUseCase {
         });
 
         const savedFile = await this.filesRepository.create(file);
+
+        // Dispatch domain events (FileUploadedEvent)
+        DomainEvents.dispatchEventsForAggregate(file.id);
 
         return Right.call({ file: savedFile });
     }

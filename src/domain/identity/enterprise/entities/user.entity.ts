@@ -1,5 +1,6 @@
-import { Entity } from "@/domain/@shared/entities/entity.entity";
+import { AggregateRoot } from "@/domain/@shared/entities/aggregate-root.entity";
 import { Username } from "../value-objects/username.vo";
+import { UserDeletedEvent } from "../events/user-deleted.event";
 
 export const ROLES = {
     USER: "USER",
@@ -15,7 +16,7 @@ export interface UserProps {
     roles: Roles[];
 }
 
-export class User extends Entity<UserProps> {
+export class User extends AggregateRoot<UserProps> {
     private constructor(props: UserProps, id?: string) {
         super(props, id);
     }
@@ -23,6 +24,13 @@ export class User extends Entity<UserProps> {
     static create(props: UserProps, id?: string) {
         const user = new User(props, id);
         return user;
+    }
+
+    /**
+     * Marks the user for deletion and emits UserDeletedEvent
+     */
+    delete(): void {
+        this.addDomainEvent(new UserDeletedEvent(this));
     }
 
     get username() {

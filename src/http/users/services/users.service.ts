@@ -4,8 +4,7 @@ import { GetAllUsersUseCase } from "@/domain/identity/application/use-cases/get-
 import { GetUserByIdUseCase } from "@/domain/identity/application/use-cases/get-user-by-id.use-case";
 import { UpdateUserUseCase } from "@/domain/identity/application/use-cases/update-user.use-case";
 import { ROLES, Roles, User } from "@/domain/identity/enterprise/entities/user.entity";
-import type { FilesRepository } from "@/domain/storage/application/repositories/files.repository";
-import { DeleteFileUseCase } from "@/domain/storage/application/use-cases/delete-file.use-case";
+import { DeleteFileByEntityUseCase } from "@/domain/storage/application/use-cases/delete-file-by-entity.use-case";
 import { GetFileUrlUseCase } from "@/domain/storage/application/use-cases/get-file-url.use-case";
 import { UploadFileUseCase } from "@/domain/storage/application/use-cases/upload-file.use-case";
 import { UserPresenter } from "@/http/@shared/presenters/user.presenter";
@@ -29,10 +28,8 @@ export class UsersService {
         private getFileUrlUseCase: GetFileUrlUseCase,
         @Inject("UploadFileUseCase")
         private uploadFileUseCase: UploadFileUseCase,
-        @Inject("DeleteFileUseCase")
-        private deleteFileUseCase: DeleteFileUseCase,
-        @Inject("FilesRepository")
-        private filesRepository: FilesRepository,
+        @Inject("DeleteFileByEntityUseCase")
+        private deleteFileByEntityUseCase: DeleteFileByEntityUseCase,
     ) {}
 
     private async getUserAvatarUrl(userId: string): Promise<string | null> {
@@ -140,12 +137,11 @@ export class UsersService {
 
         // Delete avatar if explicitly requested
         if (options?.deleteAvatar) {
-            const existingFile = await this.filesRepository.findByEntityAndField("user", userId, "avatar");
-            if (existingFile) {
-                await this.deleteFileUseCase.execute({
-                    fileId: existingFile.id.toString(),
-                });
-            }
+            await this.deleteFileByEntityUseCase.execute({
+                entityType: "user",
+                entityId: userId,
+                field: "avatar",
+            });
         }
         // Upload avatar if provided
         else if (options?.avatar && options?.environment) {

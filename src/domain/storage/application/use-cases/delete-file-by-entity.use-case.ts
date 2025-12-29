@@ -5,27 +5,29 @@ import { FilesRepository } from "../repositories/files.repository";
 import { IStorageProvider } from "../providers/storage.provider";
 import { FileNotFoundError } from "../../errors/file-not-found.error";
 
-interface DeleteFileRequest {
-    fileId: string;
+interface DeleteFileByEntityRequest {
+    entityType: string;
+    entityId: string;
+    field: string;
 }
 
-type DeleteFileError = FileNotFoundError;
+type DeleteFileByEntityError = FileNotFoundError;
 
-type DeleteFileResponse = Either<DeleteFileError, { file: File }>;
+type DeleteFileByEntityResponse = Either<DeleteFileByEntityError, { file: File }>;
 
-export class DeleteFileUseCase {
+export class DeleteFileByEntityUseCase {
     constructor(
         private filesRepository: FilesRepository,
         private storageProvider: IStorageProvider,
     ) {}
 
-    async execute(request: DeleteFileRequest): Promise<DeleteFileResponse> {
-        const { fileId } = request;
+    async execute(request: DeleteFileByEntityRequest): Promise<DeleteFileByEntityResponse> {
+        const { entityType, entityId, field } = request;
 
-        const file = await this.filesRepository.findById(fileId);
+        const file = await this.filesRepository.findByEntityAndField(entityType, entityId, field);
 
         if (!file) {
-            return Left.call(new FileNotFoundError(fileId));
+            return Left.call(new FileNotFoundError(`${entityType}/${entityId}/${field}`));
         }
 
         // Mark file for deletion and emit FileDeletedEvent
@@ -38,7 +40,7 @@ export class DeleteFileUseCase {
         await this.storageProvider.delete(file.path.toString());
 
         // Delete from database
-        await this.filesRepository.delete(fileId);
+        await this.filesRepository.delete(file.id.toString());
 
         return Right.call({ file });
     }

@@ -17,7 +17,11 @@ import { IImageProcessorProvider } from "@/domain/storage/application/providers/
 // Use Cases
 import { UploadFileUseCase } from "@/domain/storage/application/use-cases/upload-file.use-case";
 import { DeleteFileUseCase } from "@/domain/storage/application/use-cases/delete-file.use-case";
+import { DeleteFileByEntityUseCase } from "@/domain/storage/application/use-cases/delete-file-by-entity.use-case";
 import { GetFileUrlUseCase } from "@/domain/storage/application/use-cases/get-file-url.use-case";
+
+// Subscribers (Domain Events)
+import { OnUserDeletedSubscriber } from "@/domain/storage/application/subscribers/on-user-deleted.subscriber";
 
 @Module({
     imports: [PrismaModule],
@@ -75,14 +79,30 @@ import { GetFileUrlUseCase } from "@/domain/storage/application/use-cases/get-fi
             useFactory: (filesRepository: FilesRepository, storageProvider: IStorageProvider) =>
                 new GetFileUrlUseCase(filesRepository, storageProvider),
         },
+        {
+            provide: "DeleteFileByEntityUseCase",
+            inject: ["FilesRepository", "StorageProvider"],
+            useFactory: (filesRepository: FilesRepository, storageProvider: IStorageProvider) =>
+                new DeleteFileByEntityUseCase(filesRepository, storageProvider),
+        },
+
+        // Subscribers (Domain Events)
+        {
+            provide: "OnUserDeletedSubscriber",
+            inject: ["FilesRepository", "StorageProvider"],
+            useFactory: (filesRepository: FilesRepository, storageProvider: IStorageProvider) =>
+                new OnUserDeletedSubscriber(filesRepository, storageProvider),
+        },
     ],
     exports: [
-        "FilesRepository",
+        // Note: FilesRepository is intentionally NOT exported to enforce bounded context separation
+        // Other modules should use the use cases instead of accessing the repository directly
         "StorageProvider",
         "FileValidatorProvider",
         "ImageProcessorProvider",
         "UploadFileUseCase",
         "DeleteFileUseCase",
+        "DeleteFileByEntityUseCase",
         "GetFileUrlUseCase",
     ],
 })

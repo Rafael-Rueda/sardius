@@ -68,3 +68,5 @@ report.[0-9]*.[0-9]*.[0-9]*.[0-9]*.json
 # NPM
 /cli/template
 /scripts/sync-template.js
+
+todo.md

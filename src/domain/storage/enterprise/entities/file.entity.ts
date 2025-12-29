@@ -1,6 +1,8 @@
-import { Entity } from "@/domain/@shared/entities/entity.entity";
+import { AggregateRoot } from "@/domain/@shared/entities/aggregate-root.entity";
 import { FileMetadata } from "../value-objects/file-metadata.vo";
 import { FilePath } from "../value-objects/file-path.vo";
+import { FileUploadedEvent } from "../events/file-uploaded.event";
+import { FileDeletedEvent } from "../events/file-deleted.event";
 
 export interface FileProps {
     entityType: string;
@@ -11,14 +13,22 @@ export interface FileProps {
     metadata: FileMetadata;
 }
 
-export class File extends Entity<FileProps> {
+export class File extends AggregateRoot<FileProps> {
     private constructor(props: FileProps, id?: string) {
         super(props, id);
     }
 
     static create(props: FileProps, id?: string) {
         const file = new File(props, id);
+        file.addDomainEvent(new FileUploadedEvent(file));
         return file;
+    }
+
+    /**
+     * Marks the file for deletion and emits FileDeletedEvent
+     */
+    delete(): void {
+        this.addDomainEvent(new FileDeletedEvent(this));
     }
 
     get entityType() {
